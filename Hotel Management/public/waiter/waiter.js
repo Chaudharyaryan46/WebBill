@@ -4,50 +4,19 @@
 
 const socket = initSocket();
 
-let staff = null, tables = [], menuItems = [], categories = [];
+let staff = { name: 'Waiter', role: 'Staff' }, tables = [], menuItems = [], categories = [];
 let currentTable = null, currentOrder = null, currentOrderItems = [];
 let pendingItems = [];
 let activeCat = 'All';
 let pin = '';
 
-// ─── PIN LOGIN ───
-function enterPin(digit) {
-  if (pin.length >= 4) return;
-  pin += digit;
-  updateDots();
-  if (pin.length === 4) setTimeout(submitPin, 250);
-}
+// Load data immediately
+window.onload = () => {
+    loadTables();
+    loadMenu();
+};
 
-function clearPin() {
-  pin = pin.slice(0, -1);
-  updateDots();
-}
 
-function updateDots() {
-  for (let i = 0; i < 4; i++) {
-    const dot = document.getElementById(`dot${i}`);
-    if (dot) dot.classList.toggle('filled', i < pin.length);
-  }
-}
-
-async function submitPin() {
-  try {
-    staff = await api('/api/staff/login', { method: 'POST', body: { pin } });
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('mainApp').style.display = 'block';
-    document.getElementById('staffName').textContent = `${staff.name} · ${staff.role}`;
-    await loadTables();
-    loadMenu(); // load in background
-  } catch (err) {
-    pin = '';
-    updateDots();
-    const err2 = document.getElementById('loginError');
-    err2.textContent = 'Wrong PIN. Try again.';
-    const card = document.querySelector('.login-card');
-    card.style.animation = 'shake 0.4s';
-    setTimeout(() => { card.style.animation = ''; err2.textContent = ''; }, 1500);
-  }
-}
 
 // ─── TABLES ───
 async function loadTables() {
