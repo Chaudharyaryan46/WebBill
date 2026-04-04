@@ -279,6 +279,8 @@ app.post('/api/orders/:id/items', (req, res) => {
       [orderId, item.menuItemId, item.quantity || 1, menuItem.price, source || 'qr', item.notes || null]
     );
 
+    console.log(`📦 Added item ${menuItem.name} to order ${orderId}`);
+
     addedItems.push({
       id: newItemId,
       order_id: orderId,
@@ -291,6 +293,7 @@ app.post('/api/orders/:id/items', (req, res) => {
       status: 'pending',
       notes: item.notes || null,
       veg: menuItem.veg,
+      image_url: menuItem.image_url
     });
   }
 
@@ -307,6 +310,7 @@ app.post('/api/orders/:id/items', (req, res) => {
   });
 
   // Emit KOT to kitchen
+  console.log(`🔔 Emitting KOT for Table ${table.number} to Kitchen`);
   io.emit('kitchen:kot', {
     orderId,
     tableNumber: table.number,

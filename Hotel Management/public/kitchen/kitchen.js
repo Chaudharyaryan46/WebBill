@@ -131,14 +131,23 @@ function notifyKitchen(msg, color) {
 
 // ─── SOCKETS ───
 socket.on('kitchen:kot', data => {
-  kotOrders.push({
-    orderId: data.orderId,
-    tableNumber: data.tableNumber,
-    items: data.items,
-    createdAt: data.timestamp
-  });
+  console.log('🍽️ NEW KOT RECEIVED:', data);
+  
+  // Find existing order for the same table to merge if possible
+  const existingOrder = kotOrders.find(o => o.orderId === data.orderId);
+  if (existingOrder) {
+    existingOrder.items = [...existingOrder.items, ...data.items];
+  } else {
+    kotOrders.push({
+      orderId: data.orderId,
+      tableNumber: data.tableNumber,
+      items: data.items,
+      createdAt: data.timestamp
+    });
+  }
+  
   renderKOTGrid();
-  notifyKitchen(`🔔 New Order Table ${data.tableNumber}!`);
+  notifyKitchen(`🔔 New Request for Table ${data.tableNumber}!`);
   playNotification();
 });
 
