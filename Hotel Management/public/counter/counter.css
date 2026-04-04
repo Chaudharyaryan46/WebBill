@@ -1,0 +1,200 @@
+/* ═══════════════════════════════════════════════════════
+   DINEFLOW v1.2 — BILLING COUNTER (LIGHT OLIVE)
+   Inspired by: ServeEasy GoBill Premium Design
+   ═══════════════════════════════════════════════════════ */
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  height: 100vh;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ─── LEFT PANEL (MENU GRID) ─── */
+.billing-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+}
+
+.billing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.billing-search {
+  width: 400px;
+  position: relative;
+}
+
+.billing-search-input {
+  width: 100%;
+  padding: 12px 16px 12px 48px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.menu-items-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 20px;
+  overflow-y: auto;
+  padding-right: 12px;
+}
+
+.billing-item-card {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  box-shadow: var(--shadow-sm);
+  border: 4px solid transparent;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.billing-item-card:hover { border-color: var(--primary); transform: translateY(-4px); }
+
+.item-img-box {
+  width: 100%;
+  aspect-ratio: 1.1;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 12px;
+  background: #f8f9fa;
+}
+
+.item-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.billing-item-name {
+  font-weight: 800;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.billing-item-price {
+  color: var(--primary);
+  font-weight: 900;
+  font-size: 1.1rem;
+}
+
+/* ─── RIGHT PANEL (CART SIDEBAR) ─── */
+.billing-sidebar {
+  width: 450px;
+  background: #fff;
+  border-left: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  box-shadow: -10px 0 40px rgba(0,0,0,0.03);
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.cart-title { font-family: 'Outfit'; font-size: 1.5rem; font-weight: 900; }
+
+.cart-items-list {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.cart-item-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  font-size: 0.95rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.cart-item-name { font-weight: 700; flex: 1; margin-right: 12px; }
+.cart-qty-pill { background: var(--bg-app); padding: 4px 10px; border-radius: 4px; font-weight: 900; margin-right: 12px; }
+.cart-row-price { font-weight: 800; min-width: 80px; text-align: right; }
+
+/* ─── CART FOOTER (TOTALS & ACTIONS) ─── */
+.cart-footer {
+  padding-top: 20px;
+  border-top: 2px dashed var(--border-light);
+}
+
+.grand-total-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.total-label { font-size: 1.5rem; font-weight: 900; font-family: 'Outfit'; color: var(--primary); }
+.total-amount { font-size: 1.8rem; font-weight: 900; font-family: 'Outfit'; }
+
+.payment-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.pay-btn {
+  padding: 18px 10px;
+  border-radius: var(--radius-md);
+  background: var(--bg-app);
+  color: var(--text-main);
+  font-weight: 800;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  border: 1px solid var(--border-light);
+}
+
+.pay-btn.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.pay-confirm-btn {
+  width: 100%;
+  padding: 22px;
+  background: var(--primary);
+  color: white;
+  border-radius: var(--radius-lg);
+  font-size: 1.2rem;
+  font-weight: 900;
+  font-family: 'Outfit';
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 15px 30px rgba(136, 158, 72, 0.3);
+}
+
+/* ─── UTILS ─── */
+.badge-table {
+  background: var(--bg-app);
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: var(--primary);
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #ddd; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #ccc; }

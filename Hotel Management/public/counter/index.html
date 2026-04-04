@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Billing Counter — DineFlow</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Outfit:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f5f5f0;
+      color: #1a1a1a;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: white;
+      padding: 14px 28px;
+      border-bottom: 1px solid #e8e8e0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      flex-shrink: 0;
+    }
+    .brand { font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 900; color: #889E48; }
+    .brand-sub { font-size: 0.75rem; font-weight: 600; color: #999; margin-left: 8px; }
+
+    .header-stats { display: flex; gap: 30px; }
+    .stat { text-align: center; }
+    .stat-val { font-family: 'Outfit', sans-serif; font-size: 1.2rem; font-weight: 900; color: #889E48; }
+    .stat-lbl { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: #bbb; }
+
+    /* ── LAYOUT ── */
+    .workspace { flex: 1; display: flex; overflow: hidden; }
+
+    /* ── LEFT SIDEBAR: Tables ── */
+    .sidebar {
+      width: 260px;
+      background: white;
+      border-right: 1px solid #e8e8e0;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .sidebar-title {
+      padding: 18px 20px 14px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #bbb;
+      border-bottom: 1px solid #f0f0ea;
+    }
+    .tables-list { flex: 1; overflow-y: auto; padding: 12px; }
+
+    .table-btn {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 2px solid #f0f0ea;
+      background: white;
+      cursor: pointer;
+      text-align: left;
+      margin-bottom: 8px;
+      transition: all 0.18s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .table-btn:active { transform: scale(0.97); }
+    .table-btn.active { border-color: #889E48; background: #f0f4e8; }
+    .table-btn.billed { border-color: #f39c12; background: #fffbf0; }
+    .table-btn .t-num { font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 900; }
+    .table-btn .t-info { font-size: 0.75rem; color: #999; margin-top: 2px; }
+    .table-btn .t-status {
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .table-btn .t-status.occupied { background: #f0f4e8; color: #889E48; }
+    .table-btn .t-status.billed { background: #fef3e2; color: #e67e22; }
+
+    .no-tables {
+      padding: 40px 20px;
+      text-align: center;
+      color: #ccc;
+      font-size: 0.9rem;
+    }
+
+    /* ── MAIN: Bill Area ── */
+    .bill-area {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* EMPTY STATE */
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #ccc;
+    }
+    .empty-icon { font-size: 5rem; margin-bottom: 20px; opacity: 0.4; }
+    .empty-title { font-family: 'Outfit', sans-serif; font-size: 1.6rem; font-weight: 900; color: #ddd; }
+    .empty-sub { font-size: 0.9rem; margin-top: 6px; }
+
+    /* BILL DISPLAY */
+    .bill-display {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .bill-header {
+      padding: 24px 28px 16px;
+      border-bottom: 1px solid #f0f0ea;
+      flex-shrink: 0;
+      background: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .bill-table-num { font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 900; }
+    .bill-order-id { font-size: 0.8rem; color: #bbb; margin-top: 4px; }
+    .bill-status-badge {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .badge-active { background: #f0f4e8; color: #889E48; }
+    .badge-billed { background: #fef3e2; color: #e67e22; }
+
+    .bill-items {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 28px;
+    }
+
+    .bill-items-header {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      padding: 8px 0;
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #bbb;
+      border-bottom: 1px solid #f0f0ea;
+      margin-bottom: 4px;
+    }
+    .bill-items-header span:last-child { text-align: right; }
+
+    .bill-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      padding: 12px 0;
+      border-bottom: 1px solid #f8f8f5;
+      align-items: center;
+      font-size: 0.95rem;
+    }
+    .bill-row:last-child { border-bottom: none; }
+    .bill-item-name { font-weight: 700; }
+    .bill-item-qty { font-weight: 800; color: #888; }
+    .bill-item-total { font-weight: 900; text-align: right; color: #889E48; }
+
+    /* PAYMENT PANEL */
+    .pay-panel {
+      width: 360px;
+      background: white;
+      border-left: 1px solid #e8e8e0;
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      flex-shrink: 0;
+    }
+
+    .pay-panel-title { font-family: 'Outfit', sans-serif; font-size: 1.2rem; font-weight: 900; margin-bottom: 20px; }
+
+    .total-breakdown { margin-bottom: 20px; }
+    .tot-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 0.9rem;
+      color: #888;
+      border-bottom: 1px solid #f8f8f5;
+    }
+    .tot-grand {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+      padding: 16px 20px;
+      background: #f0f4e8;
+      border-radius: 16px;
+    }
+    .tot-grand-lbl { font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 900; color: #889E48; }
+    .tot-grand-val { font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 900; }
+
+    /* DISCOUNT */
+    .discount-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .discount-label { font-size: 0.85rem; font-weight: 700; color: #888; flex: 1; }
+    .discount-input {
+      width: 80px;
+      padding: 8px 12px;
+      border: 1.5px solid #e8e8e0;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-align: center;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+    }
+    .discount-input:focus { border-color: #889E48; }
+
+    /* PAYMENT METHODS */
+    .pay-methods-label { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: #bbb; margin-bottom: 10px; }
+    .pay-methods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+    .pay-btn {
+      padding: 14px 8px;
+      border-radius: 14px;
+      border: 2px solid #e8e8e0;
+      background: white;
+      cursor: pointer;
+      text-align: center;
+      font-weight: 800;
+      font-size: 0.82rem;
+      transition: all 0.18s;
+    }
+    .pay-btn .p-icon { font-size: 1.4rem; display: block; margin-bottom: 6px; }
+    .pay-btn:active { transform: scale(0.95); }
+    .pay-btn.active { background: #889E48; color: white; border-color: #889E48; box-shadow: 0 4px 16px rgba(136,158,72,0.25); }
+
+    /* ACTION BUTTONS */
+    .bill-actions { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
+
+    .btn-generate {
+      width: 100%;
+      padding: 16px;
+      background: white;
+      color: #889E48;
+      border: 2px solid #889E48;
+      border-radius: 14px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.18s;
+    }
+    .btn-generate:hover { background: #f0f4e8; }
+    .btn-generate:active { transform: scale(0.97); }
+
+    .btn-settle {
+      width: 100%;
+      padding: 18px;
+      background: #889E48;
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-size: 1.1rem;
+      font-weight: 900;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(136,158,72,0.3);
+      transition: all 0.18s;
+      letter-spacing: 0.02em;
+    }
+    .btn-settle:active { transform: scale(0.97); }
+    .btn-settle:disabled { background: #ccc; box-shadow: none; cursor: not-allowed; }
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 10px; }
+
+    /* TOAST */
+    .toast-wrap { position: fixed; top: 16px; right: 16px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+    .toast {
+      background: white;
+      border-radius: 14px;
+      padding: 12px 18px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+      border-left: 4px solid #889E48;
+      min-width: 220px;
+      animation: toastIn 0.25s ease-out;
+    }
+    .toast.error { border-left-color: #e74c3c; }
+    .toast.warn { border-left-color: #f39c12; }
+
+    /* WA MODAL */
+    .modal-bg {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+    .modal {
+      background: white;
+      border-radius: 28px;
+      padding: 40px 36px;
+      max-width: 380px;
+      width: 90%;
+      text-align: center;
+    }
+    .modal-icon { font-size: 3rem; margin-bottom: 12px; }
+    .modal h2 { font-family: 'Outfit', sans-serif; font-size: 1.5rem; margin-bottom: 6px; }
+    .modal p { color: #888; font-size: 0.9rem; margin-bottom: 24px; }
+    .modal input {
+      width: 100%; padding: 14px; border: 1.5px solid #e8e8e0;
+      border-radius: 12px; font-size: 1.1rem; text-align: center;
+      outline: none; font-family: 'Inter', sans-serif; margin-bottom: 16px; display: block;
+    }
+    .modal input:focus { border-color: #889E48; }
+    .modal-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .btn-done { padding: 14px; background: #f5f5f0; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; font-family: 'Inter', sans-serif; }
+    .btn-wa { padding: 14px; background: #25d366; color: white; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; font-family: 'Inter', sans-serif; }
+    .btn-done:active, .btn-wa:active { transform: scale(0.96); }
+
+    /* NOTIFICATION BADGE */
+    .notif-badge {
+      background: #e74c3c;
+      color: white;
+      font-size: 0.6rem;
+      font-weight: 900;
+      padding: 2px 6px;
+      border-radius: 50px;
+      margin-left: 8px;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .animate { animation: fadeUp 0.25s ease-out; }
+  </style>
+</head>
+<body>
+  <div class="toast-wrap" id="toastWrap"></div>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div>
+      <span class="brand">💰 DineFlow</span>
+      <span class="brand-sub">Billing Counter</span>
+    </div>
+    <div class="header-stats">
+      <div class="stat">
+        <div class="stat-val" id="statRevenue">₹0</div>
+        <div class="stat-lbl">Today Revenue</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" id="statOrders">0</div>
+        <div class="stat-lbl">Bills Settled</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" id="statPending">0</div>
+        <div class="stat-lbl">Pending Bills</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- WORKSPACE -->
+  <div class="workspace">
+
+    <!-- LEFT: TABLE LIST -->
+    <aside class="sidebar">
+      <div class="sidebar-title">Active Tables</div>
+      <div class="tables-list" id="tablesList">
+        <div class="no-tables">Loading tables...</div>
+      </div>
+    </aside>
+
+    <!-- CENTER: BILL DISPLAY + PAYMENT -->
+    <div class="bill-area" id="billArea">
+      <!-- Empty state shown by default -->
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">🧾</div>
+        <div class="empty-title">Select a Table</div>
+        <div class="empty-sub">Choose an occupied table from the left</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- WHATSAPP MODAL -->
+  <div class="modal-bg" id="waModal">
+    <div class="modal">
+      <div class="modal-icon">✅</div>
+      <h2>Payment Done!</h2>
+      <p>Send a digital receipt via WhatsApp?</p>
+      <input type="tel" id="waPhone" placeholder="10-digit mobile number" maxlength="10">
+      <div class="modal-btns">
+        <button class="btn-done" onclick="closeModal()">✓ Done</button>
+        <button class="btn-wa" onclick="sendWA()">📱 WhatsApp</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/shared/socket-client.js"></script>
+  <script>
+    const socket = initSocket();
+
+    // ── STATE ──
+    let allTables = [];
+    let selectedTableNum = null;
+    let currentOrder = null;
+    let selectedPay = null;
+    let lastBill = null;
+
+    // ── INIT ──
+    document.addEventListener('DOMContentLoaded', () => {
+      loadTables();
+      loadStats();
+    });
+
+    // ── TABLES ──
+    async function loadTables() {
+      try {
+        allTables = await api('/api/tables');
+        renderTables();
+      } catch (e) { toast('Could not load tables', 'error'); }
+    }
+
+    function renderTables() {
+      const container = document.getElementById('tablesList');
+      const active = allTables.filter(t => t.status === 'occupied' || t.status === 'billed');
+
+      document.getElementById('statPending').textContent = active.length;
+
+      if (active.length === 0) {
+        container.innerHTML = '<div class="no-tables">No active tables right now</div>';
+        return;
+      }
+
+      container.innerHTML = active.map(t => `
+        <button class="table-btn ${t.status} ${selectedTableNum === t.number ? 'active' : ''}"
+                onclick="selectTable(${t.number})">
+          <div>
+            <div class="t-num">Table ${t.number}</div>
+            <div class="t-info">${t.activeOrder ? formatCurrency(t.activeOrder.total) + ' • ' + t.activeOrder.itemCount + ' items' : 'No items yet'}</div>
+          </div>
+          <span class="t-status ${t.status}">${t.status === 'billed' ? 'CHECK' : 'LIVE'}</span>
+        </button>
+      `).join('');
+    }
+
+    // ── SELECT TABLE ──
+    async function selectTable(num) {
+      selectedTableNum = num;
+      selectedPay = null;
+      renderTables();
+
+      const billArea = document.getElementById('billArea');
+      billArea.innerHTML = '<div style="flex:1;display:flex;align-items:center;justify-content:center;color:#bbb;font-weight:700;">Loading order...</div>';
+
+      try {
+        currentOrder = await api(`/api/orders/table/${num}`);
+        renderBill();
+      } catch (e) {
+        billArea.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <div class="empty-title">No Active Order</div>
+            <div class="empty-sub">Table ${num} has no current order</div>
+          </div>`;
+      }
+    }
+
+    // ── RENDER BILL ──
+    function renderBill() {
+      if (!currentOrder) return;
+      const o = currentOrder;
+      const discount = o.discount || 0;
+      const sub = o.subtotal || 0;
+      const discAmt = (sub * discount) / 100;
+      const afterDisc = sub - discAmt;
+      const tax = o.tax_amount || afterDisc * 0.05;
+      const total = o.total || (afterDisc + tax);
+
+      document.getElementById('billArea').innerHTML = `
+        <div class="bill-display animate">
+          <div class="bill-header">
+            <div>
+              <div class="bill-table-num">Table ${o.table_number}</div>
+              <div class="bill-order-id">#${o.id} · Started ${formatTime(o.created_at)}</div>
+            </div>
+            <span class="bill-status-badge badge-${o.status}">${o.status.toUpperCase()}</span>
+          </div>
+
+          <div class="bill-items">
+            <div class="bill-items-header">
+              <span>Item</span><span>Qty</span><span style="text-align:right">Total</span>
+            </div>
+            ${(o.items || []).map(item => `
+              <div class="bill-row">
+                <div class="bill-item-name">${item.veg ? '🟢' : '🔴'} ${item.name}</div>
+                <div class="bill-item-qty">×${item.quantity}</div>
+                <div class="bill-item-total">${formatCurrency(item.price * item.quantity)}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="pay-panel">
+          <div class="pay-panel-title">Settlement</div>
+
+          <div class="total-breakdown">
+            <div class="tot-row"><span>Subtotal</span><span>${formatCurrency(sub)}</span></div>
+            <div class="tot-row">
+              <span>Discount</span>
+              <span>
+                <input type="number" id="discountPct" value="${discount}" min="0" max="100" style="width:50px;border:1px solid #e8e8e0;border-radius:6px;padding:3px 6px;text-align:center;font-weight:700;" oninput="recalcTotals()">%
+              </span>
+            </div>
+            <div class="tot-row"><span>GST (5%)</span><span id="taxDisp">${formatCurrency(tax)}</span></div>
+            <div class="tot-grand">
+              <div class="tot-grand-lbl">GRAND TOTAL</div>
+              <div class="tot-grand-val" id="grandDisp">${formatCurrency(total)}</div>
+            </div>
+          </div>
+
+          <div class="pay-methods-label">Choose Payment</div>
+          <div class="pay-methods">
+            <button class="pay-btn ${selectedPay === 'cash' ? 'active' : ''}" id="payCash" onclick="choosePay('cash')">
+              <span class="p-icon">💵</span>Cash
+            </button>
+            <button class="pay-btn ${selectedPay === 'upi' ? 'active' : ''}" id="payUPI" onclick="choosePay('upi')">
+              <span class="p-icon">📱</span>UPI
+            </button>
+            <button class="pay-btn ${selectedPay === 'card' ? 'active' : ''}" id="payCard" onclick="choosePay('card')">
+              <span class="p-icon">💳</span>Card
+            </button>
+          </div>
+
+          <div class="bill-actions">
+            ${o.status === 'active' ? `
+              <button class="btn-generate" onclick="generateBill()">
+                📄 Generate Bill
+              </button>
+            ` : ''}
+            <button class="btn-settle" id="settleBtn" onclick="settleBill()"
+              ${!selectedPay || o.status === 'active' ? 'disabled' : ''}>
+              ${selectedPay ? 'Confirm ' + selectedPay.toUpperCase() + ' Payment' : 'Generate Bill First'}
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function recalcTotals() {
+      if (!currentOrder) return;
+      const disc = parseFloat(document.getElementById('discountPct')?.value) || 0;
+      const sub = currentOrder.subtotal || 0;
+      const afterDisc = sub - (sub * disc / 100);
+      const tax = afterDisc * 0.05;
+      const total = afterDisc + tax;
+      const taxEl = document.getElementById('taxDisp');
+      const grandEl = document.getElementById('grandDisp');
+      if (taxEl) taxEl.textContent = formatCurrency(tax);
+      if (grandEl) grandEl.textContent = formatCurrency(total);
+    }
+
+    function choosePay(mode) {
+      selectedPay = mode;
+      ['cash','upi','card'].forEach(m => {
+        const el = document.getElementById('pay' + m.charAt(0).toUpperCase() + m.slice(1));
+        if (el) el.classList.toggle('active', m === mode);
+      });
+      const btn = document.getElementById('settleBtn');
+      if (btn && currentOrder?.status === 'billed') {
+        btn.disabled = false;
+        btn.textContent = `Confirm ${mode.toUpperCase()} Payment`;
+      }
+    }
+
+    async function generateBill() {
+      if (!currentOrder) return;
+      const disc = parseFloat(document.getElementById('discountPct')?.value) || 0;
+      const btn = document.querySelector('.btn-generate');
+      if (btn) { btn.disabled = true; btn.textContent = 'Generating...'; }
+
+      try {
+        currentOrder = await api(`/api/orders/${currentOrder.id}/generate-bill`, {
+          method: 'POST', body: { discount: disc }
+        });
+        renderBill();
+        toast('Bill generated! Now select payment method.');
+        loadTables();
+      } catch (e) {
+        toast('Failed to generate bill', 'error');
+        if (btn) { btn.disabled = false; btn.textContent = '📄 Generate Bill'; }
+      }
+    }
+
+    async function settleBill() {
+      if (!currentOrder || !selectedPay) return;
+      const btn = document.getElementById('settleBtn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
+
+      try {
+        const disc = parseFloat(document.getElementById('discountPct')?.value) || 0;
+        // If still active, generate bill first
+        if (currentOrder.status === 'active') {
+          currentOrder = await api(`/api/orders/${currentOrder.id}/generate-bill`, {
+            method: 'POST', body: { discount: disc }
+          });
+        }
+
+        await api(`/api/orders/${currentOrder.id}/pay`, {
+          method: 'POST', body: { paymentMode: selectedPay }
+        });
+
+        lastBill = {
+          table: currentOrder.table_number,
+          items: currentOrder.items,
+          total: currentOrder.total,
+          mode: selectedPay
+        };
+
+        // Reset state
+        const tableNum = selectedTableNum;
+        currentOrder = null;
+        selectedTableNum = null;
+        selectedPay = null;
+
+        // Refresh
+        loadTables();
+        loadStats();
+
+        // Show receipt modal
+        document.getElementById('waModal').style.display = 'flex';
+        document.getElementById('waPhone').value = '';
+        document.getElementById('waPhone').focus();
+
+        // Reset bill area
+        document.getElementById('billArea').innerHTML = `
+          <div class="empty-state animate">
+            <div class="empty-icon">✅</div>
+            <div class="empty-title">Table ${tableNum} — Cleared!</div>
+            <div class="empty-sub">Payment received. Table is now free.</div>
+          </div>`;
+
+        toast(`✅ Table ${tableNum} settled via ${selectedPay.toUpperCase()}`);
+      } catch (e) {
+        toast('Settlement failed: ' + e.message, 'error');
+        if (btn) { btn.disabled = false; btn.textContent = `Confirm ${selectedPay?.toUpperCase()} Payment`; }
+      }
+    }
+
+    // ── STATS ──
+    async function loadStats() {
+      try {
+        const data = await api('/api/transactions/summary');
+        document.getElementById('statRevenue').textContent = formatCurrency(data.total_revenue);
+        document.getElementById('statOrders').textContent = data.total_orders;
+      } catch {}
+    }
+
+    // ── WHATSAPP ──
+    function closeModal() {
+      document.getElementById('waModal').style.display = 'none';
+      if (!selectedTableNum) {
+        document.getElementById('billArea').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🧾</div>
+            <div class="empty-title">Select a Table</div>
+            <div class="empty-sub">Choose an occupied table from the left</div>
+          </div>`;
+      }
+    }
+
+    function sendWA() {
+      const phone = document.getElementById('waPhone').value.trim();
+      if (phone.length < 10) { toast('Enter a valid 10-digit number', 'warn'); return; }
+      if (!lastBill) return closeModal();
+
+      let msg = `*🧾 DINEFLOW RECEIPT*\n`;
+      msg += `Table: ${lastBill.table}\n`;
+      msg += `Date: ${new Date().toLocaleString('en-IN')}\n\n`;
+      (lastBill.items || []).forEach(i => {
+        msg += `${i.name}  ×${i.quantity}  ${formatCurrency(i.price * i.quantity)}\n`;
+      });
+      msg += `\n——————————\n`;
+      msg += `*Total Paid: ${formatCurrency(lastBill.total)}*\n`;
+      msg += `Mode: ${lastBill.mode.toUpperCase()}\n\n`;
+      msg += `Thank you for dining with us! 🙏`;
+
+      window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+      closeModal();
+    }
+
+    // ── TOAST ──
+    function toast(msg, type = 'success') {
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      el.textContent = msg;
+      document.getElementById('toastWrap').appendChild(el);
+      setTimeout(() => el.remove(), 3500);
+    }
+
+    // ── SOCKET EVENTS ──
+    socket.on('table:updated', () => {
+      loadTables();
+      // If viewing a table, refresh it
+      if (selectedTableNum) selectTable(selectedTableNum);
+    });
+
+    socket.on('order:items-added', data => {
+      if (selectedTableNum === data.tableNumber && currentOrder) {
+        // Refresh current order
+        api(`/api/orders/table/${selectedTableNum}`).then(o => { currentOrder = o; renderBill(); }).catch(() => {});
+      }
+      loadTables();
+    });
+
+    socket.on('order:bill-requested', data => {
+      toast(`🔔 Bill requested: Table ${data.tableNumber}!`, 'warn');
+      loadTables();
+      // Auto-select that table
+      selectTable(data.tableNumber);
+    });
+
+    socket.on('order:paid', () => { loadStats(); loadTables(); });
+  </script>
+</body>
+</html>

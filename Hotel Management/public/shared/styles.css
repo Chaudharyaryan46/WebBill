@@ -1,0 +1,78 @@
+/* ═══════════════════════════════════════════════════════
+   DINEFLOW v1.2 — UNIFIED LIGHT DESIGN SYSTEM
+   Inspired by: Modern Card-based Restaurant POS
+   Colors: Olive Green (#889E48), Soft White (#F8F9FA)
+   ═══════════════════════════════════════════════════════ */
+
+:root {
+  --bg-app: #f4f5f0;
+  --bg-card: #ffffff;
+  --primary: #889E48; /* Olive Green from images */
+  --primary-hover: #768a3d;
+  --text-main: #2d3436;
+  --text-muted: #636e72;
+  --border-light: #e9ecef;
+  --danger: #ff7675;
+  --success: #55efc4;
+  --radius-xl: 24px;
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.05);
+  --shadow-md: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  font-weight: 700;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:active {
+  transform: scale(0.96);
+  background: var(--primary-hover);
+}
+
+/* Card Common */
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+}
+
+/* Inputs */
+.input-field {
+  background: #fff;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-size: 1rem;
+}
+
+/* Utilities */
+.flex-center { display: flex; align-items: center; justify-content: center; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+.text-olive { color: var(--primary); }

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>DineFlow — Waiter</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="waiter.css">
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">🛎️</div>
+    <h1 class="login-title">Waiter Login</h1>
+    <p class="login-sub">Enter your 4-digit PIN</p>
+
+    <div class="pin-row" id="pinDisplay">
+      <span class="pin-dot" id="dot0"></span>
+      <span class="pin-dot" id="dot1"></span>
+      <span class="pin-dot" id="dot2"></span>
+      <span class="pin-dot" id="dot3"></span>
+    </div>
+
+    <div class="numpad">
+      <button class="num-key" onclick="enterPin('1')">1</button>
+      <button class="num-key" onclick="enterPin('2')">2</button>
+      <button class="num-key" onclick="enterPin('3')">3</button>
+      <button class="num-key" onclick="enterPin('4')">4</button>
+      <button class="num-key" onclick="enterPin('5')">5</button>
+      <button class="num-key" onclick="enterPin('6')">6</button>
+      <button class="num-key" onclick="enterPin('7')">7</button>
+      <button class="num-key" onclick="enterPin('8')">8</button>
+      <button class="num-key" onclick="enterPin('9')">9</button>
+      <button class="num-key num-del" onclick="clearPin()">⌫</button>
+      <button class="num-key" onclick="enterPin('0')">0</button>
+      <button class="num-key num-ok" onclick="submitPin()">✓</button>
+    </div>
+
+    <div id="loginError" class="login-error"></div>
+  </div>
+</div>
+
+<!-- ═══ MAIN APP ═══ -->
+<div id="mainApp" style="display:none">
+
+  <!-- TOP HEADER -->
+  <header class="app-header">
+    <div>
+      <div class="app-logo">🍽️ DineFlow</div>
+      <div class="staff-label" id="staffName">Waiter</div>
+    </div>
+    <button class="back-btn" id="backBtn" onclick="showTableView()" style="display:none">← Tables</button>
+  </header>
+
+  <!-- TABLE VIEW -->
+  <div id="tableView">
+    <div class="section-title">Select a Table</div>
+    <div class="tables-grid" id="tablesGrid"></div>
+  </div>
+
+  <!-- ORDER VIEW -->
+  <div id="orderView" style="display:none">
+    <div class="order-table-label" id="orderTableLabel">Table —</div>
+
+    <!-- Search + Categories -->
+    <div class="menu-search-wrap">
+      <input class="menu-search" type="text" placeholder="🔍 Search menu..." oninput="searchMenu(this.value)">
+    </div>
+    <div class="cat-row" id="catRow"></div>
+
+    <!-- Menu Items -->
+    <div class="items-grid" id="itemsGrid"></div>
+
+    <!-- Bottom Cart Drawer -->
+    <div class="cart-drawer" id="cartDrawer">
+      <div class="cart-summary-row">
+        <div>
+          <div class="cart-label">Cart Total</div>
+          <div class="cart-total" id="cartTotal">₹0</div>
+        </div>
+        <div class="cart-count" id="cartCount">0 items</div>
+      </div>
+      <button class="kot-btn" id="kotBtn" onclick="sendKOT()">🚀 Send to Kitchen</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/shared/socket-client.js"></script>
+<script src="waiter.js"></script>
+</body>
+</html>

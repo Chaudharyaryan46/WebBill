@@ -1,0 +1,154 @@
+/* ═══════════════════════════════════════════════════════
+   DINEFLOW v1.2 — KITCHEN KDS (LIGHT OLIVE)
+   Optimized for: Visual Clarity, Fulfillment Speed
+   ═══════════════════════════════════════════════════════ */
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  padding: 24px;
+}
+
+/* ─── KITCHEN TABS ─── */
+.kitchen-tabs {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  background: white;
+  padding: 8px;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  width: fit-content;
+}
+
+.tab-btn {
+  padding: 12px 32px;
+  border-radius: var(--radius-lg);
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--text-muted);
+  border: 4px solid transparent;
+}
+
+.tab-btn.active {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 4px 12px rgba(136, 158, 72, 0.2);
+}
+
+/* ─── KOT GRID ─── */
+.kds-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 24px;
+}
+
+.kds-card {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.kds-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 15px;
+  border-bottom: 1px dashed var(--border-light);
+}
+
+.kds-table-num {
+  font-family: 'Outfit';
+  font-size: 1.5rem;
+  font-weight: 900;
+}
+
+.kds-time {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+/* ─── ITEMS IN KOT ─── */
+.kds-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.kds-item:last-child { border-bottom: none; }
+
+.kds-item-img {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  background: #f8f9fa;
+}
+
+.kds-item-info { flex: 1; min-width: 0; }
+.kds-item-name { font-weight: 800; font-size: 1.1rem; margin-bottom: 4px; }
+.kds-item-qty { font-weight: 900; color: var(--primary); font-size: 1.1rem; }
+
+.kds-status-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  background: #f1f1f1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: #ccc;
+  transition: all 0.2s;
+}
+
+.kds-status-btn.preparing { background: var(--primary); color: white; }
+.kds-status-btn.ready { background: #ffd93d; color: #000; }
+
+/* ─── STATUS STEPPER ─── */
+.status-stepper {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  position: relative;
+  margin-top: 15px;
+}
+
+.step-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #eee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  z-index: 2;
+  font-weight: 900;
+  color: #999;
+}
+
+.step-dot.active { background: var(--primary); color: white; }
+.step-line {
+  position: absolute;
+  top: 27px;
+  left: 32px;
+  right: 32px;
+  height: 2px;
+  background: #eee;
+  z-index: 1;
+}
+
+/* ─── EMPTY STATE ─── */
+.kds-empty {
+  text-align: center;
+  padding: 100px 0;
+  color: var(--text-muted);
+}
+.kds-empty-icon { font-size: 4rem; opacity: 0.1; margin-bottom: 20px; }

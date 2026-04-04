@@ -1,0 +1,17 @@
+{
+  "name": "restaurant-management-system",
+  "version": "1.0.0",
+  "description": "Real-time Restaurant Management System with QR Ordering, Waiter Module, Billing Counter & Kitchen Display",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "sql.js": "^1.11.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "socket.io": "^4.8.0",
+    "uuid": "^10.0.0"
+  }
+}

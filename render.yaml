@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: dineflow-hotel-system
+    env: node
+    plan: free
+    region: singapore
+    buildCommand: cd "Hotel Management" && npm install
+    startCommand: cd "Hotel Management" && node server.js
+    envVars:
+      - key: DB_PATH
+        value: "/opt/render/project/src/db_disk/restaurant.db"
+      - key: PORT
+        value: 3000
+    disk:
+      name: restaurant-db-disk
+      mountPath: /opt/render/project/src/db_disk
+      sizeGB: 1
