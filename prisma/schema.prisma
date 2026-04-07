@@ -32,6 +32,7 @@ model Hotel {
   transactions      Transaction[]
   customers         Customer[]
   loyaltyTransactions LoyaltyTransaction[]
+  shifts            Shift[]
 }
 
 model User {
@@ -153,4 +154,21 @@ model LoyaltyTransaction {
   hotelId     String
   hotel       Hotel    @relation(fields: [hotelId], references: [id])
   createdAt   DateTime @default(now())
+}
+
+model Shift {
+  id            String    @id @default(cuid())
+  hotelId       String
+  hotel         Hotel     @relation(fields: [hotelId], references: [id])
+  startTime     DateTime  @default(now())
+  endTime       DateTime?
+  status        String    @default("OPEN") // OPEN, CLOSED
+  totalRevenue  Float     @default(0)
+  totalCash     Float     @default(0)
+  totalDigital  Float     @default(0)
+  totalTax      Float     @default(0)
+  totalOrders   Int       @default(0)
+  closedBy      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }

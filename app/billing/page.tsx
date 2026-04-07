@@ -39,12 +39,17 @@ export default function BillingDashboard() {
   });
   const [showInsights, setShowInsights] = useState(false);
   const [activeTab, setActiveTab] = useState<'performance' | 'menu' | 'tax' | 'closure'>('performance');
+  const [isShiftOpen, setIsShiftOpen] = useState<boolean>(true);
+  const [isStartingShift, setIsStartingShift] = useState(false);
 
   const fetchStats = async () => {
     try {
       const res = await fetch('/api/billing/revenue?hotelId=SFB-99');
       const data = await res.json();
-      if (!data.error) setStats(data);
+      if (!data.error) {
+        setStats(data);
+        setIsShiftOpen(data.isShiftOpen);
+      }
     } catch (err) {
       console.error('Stats fetch failed', err);
     }
@@ -249,6 +254,24 @@ export default function BillingDashboard() {
     }
     return acc;
   }, []);
+
+  const handleOpenShift = async () => {
+    setIsStartingShift(true);
+    try {
+      const res = await fetch('/api/billing/shift', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hotelId: 'SFB-99' })
+      });
+      if (res.ok) {
+        await fetchStats();
+      }
+    } catch (err) {
+      console.error('Failed to open shift', err);
+    } finally {
+      setIsStartingShift(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-webbill-cream font-sans antialiased text-webbill-dark">
@@ -962,48 +985,72 @@ export default function BillingDashboard() {
                            </div>
                            <div className="flex gap-4 w-full max-w-md">
                               <button 
-                                 onClick={() => {
-                                    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-                                    doc.setFont('helvetica', 'bold');
-                                    doc.setFontSize(22);
-                                    doc.text('SHIFT CLOSURE REPORT', 105, 20, { align: 'center' });
-                                    
-                                    doc.setFontSize(10);
-                                    doc.setFont('helvetica', 'normal');
-                                    doc.text(`Hotel: Saffron Bay (SFB-99)`, 20, 35);
-                                    doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 40);
-                                    doc.text(`Closure Time: ${new Date().toLocaleTimeString()}`, 20, 45);
+                                 onClick={async () => {
+                                    // 1. Close the shift in the database
+                                    try {
+                                       const closeRes = await fetch('/api/billing/shift/close', {
+                                           method: 'POST',
+                                           headers: { 'Content-Type': 'application/json' },
+                                           body: JSON.stringify({ hotelId: 'SFB-99', closedBy: 'Counter Admin' })
+                                       });
 
-                                    autoTable(doc, {
-                                       startY: 55,
-                                       head: [['Revenue Item', 'Amount (INR)']],
-                                       body: [
-                                          ['Total Revenue', stats.todayRevenue.toFixed(2)],
-                                          ['Cash In Hand', stats.breakdown.Cash.toFixed(2)],
-                                          ['UPI Payments', stats.breakdown.UPI.toFixed(2)],
-                                          ['Card Payments', stats.breakdown.Card.toFixed(2)],
-                                          ['Total GST Collected', stats.totalGst.toFixed(2)],
-                                          ['Growth vs Yesterday', `${stats.growth}%`]
-                                       ],
-                                       theme: 'striped',
-                                       headStyles: { fillColor: [92, 45, 39], textColor: [255, 255, 255] }
-                                    });
+                                       if (!closeRes.ok) {
+                                           const errData = await closeRes.json();
+                                           alert(errData.error || 'Failed to close shop');
+                                           return;
+                                       }
 
-                                    const finalY = (doc as any).lastAutoTable.finalY + 10;
-                                    doc.setFont('helvetica', 'bold');
-                                    doc.text('Top Items Sold:', 20, finalY);
-                                    
-                                    stats.topItems.forEach((item: any, i: number) => {
+                                       // 2. Generate the PDF report
+                                       const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+                                       doc.getFontList();
+                                       doc.setFont('helvetica', 'bold');
+                                       doc.setFontSize(22);
+                                       doc.text('SHIFT CLOSURE REPORT', 105, 20, { align: 'center' });
+                                       
+                                       doc.setFontSize(10);
                                        doc.setFont('helvetica', 'normal');
-                                       doc.text(`${i+1}. ${item.name} (x${item.quantity})`, 25, finalY + 7 + (i * 5));
-                                    });
+                                       doc.text(`Hotel: Saffron Bay (SFB-99)`, 20, 35);
+                                       doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 40);
+                                       doc.text(`Closure Time: ${new Date().toLocaleTimeString()}`, 20, 45);
 
-                                    doc.save(`EOD_Report_${Date.now()}.pdf`);
+                                       autoTable(doc, {
+                                           startY: 55,
+                                           head: [['Revenue Item', 'Amount (INR)']],
+                                           body: [
+                                               ['Total Revenue', stats.todayRevenue.toFixed(2)],
+                                               ['Cash In Hand', stats.breakdown.Cash.toFixed(2)],
+                                               ['UPI Payments', stats.breakdown.UPI.toFixed(2)],
+                                               ['Card Payments', stats.breakdown.Card.toFixed(2)],
+                                               ['Total GST Collected', stats.totalGst.toFixed(2)],
+                                               ['Growth vs Yesterday', `${stats.growth}%`]
+                                           ],
+                                           theme: 'striped',
+                                           headStyles: { fillColor: [42, 115, 182], textColor: [255, 255, 255] }
+                                       });
 
-                                    // Create WhatsApp Message
-                                    const message = `*🧾 WebBill EOD Shift Closure Summary*\n\n*Hotel:* Saffron Bay\n*Date:* ${new Date().toLocaleDateString()}\n\n*Financials:*\n💰 Total Sales: ₹${stats.todayRevenue.toLocaleString()}\n💵 Cash: ₹${stats.breakdown.Cash.toLocaleString()}\n💳 Digital: ₹${(stats.breakdown.UPI + stats.breakdown.Card).toLocaleString()}\n⚖️ Tax Collected: ₹${stats.totalGst.toLocaleString()}\n📈 Daily Growth: ${stats.growth}%\n\n*Top Items:* \n${stats.topItems.map(i => `▪️ ${i.name} (x${i.quantity})`).join('\n')}\n\nShift closed successfully! ✅`;
-                                    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
-                                    setShowInsights(false);
+                                       const finalY = (doc as any).lastAutoTable.finalY + 10;
+                                       doc.setFont('helvetica', 'bold');
+                                       doc.text('Top Items Sold:', 20, finalY);
+                                       
+                                       stats.topItems.forEach((item: any, i: number) => {
+                                           doc.setFont('helvetica', 'normal');
+                                           doc.text(`${i+1}. ${item.name} (x${item.quantity})`, 25, finalY + 7 + (i * 5));
+                                       });
+
+                                       doc.save(`EOD_Report_${Date.now()}.pdf`);
+
+                                       // 3. Create WhatsApp Message
+                                       const message = `*🧾 WebBill EOD Shift Closure Summary*\n\n*Hotel:* Saffron Bay\n*Date:* ${new Date().toLocaleDateString()}\n\n*Financials:*\n💰 Total Sales: ₹${stats.todayRevenue.toLocaleString()}\n💵 Cash: ₹${stats.breakdown.Cash.toLocaleString()}\n💳 Digital: ₹${(stats.breakdown.UPI + stats.breakdown.Card).toLocaleString()}\n⚖️ Tax Collected: ₹${stats.totalGst.toLocaleString()}\n📈 Daily Growth: ${stats.growth}%\n\n*Top Items:* \n${stats.topItems.map(i => `▪️ ${i.name} (x${i.quantity})`).join('\n')}\n\nShift closed successfully! ✅`;
+                                       window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+                                       
+                                       // 4. Update UI
+                                       setShowInsights(false);
+                                       setIsShiftOpen(false);
+                                       await fetchStats();
+                                    } catch (err) {
+                                       console.error('Final closure failed', err);
+                                       alert('Shift closure failed in database');
+                                    }
                                  }}
                                  className="flex-1 bg-red-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-red-600/20 active:scale-95 transition-all flex items-center justify-center gap-3"
                               >
@@ -1016,6 +1063,56 @@ export default function BillingDashboard() {
                </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Start Day Overlay */}
+      <AnimatePresence>
+        {!isShiftOpen && !loading && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-webbill-dark/95 backdrop-blur-xl z-[100] flex items-center justify-center p-6 text-center"
+          >
+             <motion.div 
+               initial={{ scale: 0.9, y: 20 }}
+               animate={{ scale: 1, y: 0 }}
+               className="bg-white rounded-[50px] p-12 max-w-lg w-full shadow-2xl relative overflow-hidden"
+             >
+                {/* Decorative Elements */}
+                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-webbill-burgundy via-blue-500 to-webbill-burgundy" />
+                <div className="absolute -top-24 -right-24 w-48 h-48 bg-webbill-burgundy/5 rounded-full blur-3xl" />
+                
+                <div className="w-24 h-24 bg-webbill-burgundy/10 text-webbill-burgundy rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
+                   <Calendar size={40} className="animate-bounce" />
+                </div>
+                
+                <h2 className="text-3xl font-black text-webbill-dark mb-4">Start Your Business Day</h2>
+                <p className="text-webbill-muted font-medium mb-10 leading-relaxed">
+                   The shop is currently closed. To begin accepting orders and tracking revenue, please open the shift for today.
+                </p>
+
+                <button 
+                  disabled={isStartingShift}
+                  onClick={handleOpenShift}
+                  className="w-full h-20 bg-webbill-burgundy text-white rounded-3xl font-black text-lg uppercase tracking-[0.2em] shadow-2xl shadow-webbill-burgundy/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 disabled:opacity-50"
+                >
+                   {isStartingShift ? (
+                      <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin" />
+                   ) : (
+                      <>
+                        <ShieldCheck size={24} />
+                        Start Day
+                      </>
+                   )}
+                </button>
+                
+                <p className="mt-8 text-[10px] font-black text-webbill-muted uppercase tracking-widest opacity-60">
+                   System Date: {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+                </p>
+             </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

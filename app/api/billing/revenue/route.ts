@@ -15,17 +15,46 @@ export async function GET(req: NextRequest) {
     const startOfToday = startOfDay(today);
     const endOfToday = endOfDay(today);
     
-    const yesterday = subDays(today, 1);
-    const startOfYesterday = startOfDay(yesterday);
-    const endOfYesterday = endOfDay(yesterday);
+    // Get Active Shift
+    const activeShift = await prisma.shift.findFirst({
+        where: {
+            hotelId,
+            status: 'OPEN'
+        },
+        orderBy: {
+            startTime: 'desc'
+        }
+    });
 
-    // 1. Get Today Revenue
+    // If no shift is open, revenue for the current view is 0
+    if (!activeShift) {
+        return NextResponse.json({
+            todayRevenue: 0,
+            yesterdayRevenue: 0,
+            growth: 0,
+            activeTables: 0,
+            pendingBills: 0,
+            completionRate: 100,
+            breakdown: { Cash: 0, UPI: 0, Card: 0 },
+            totalGst: 0,
+            topItems: [],
+            hourlyStats: Array(24).fill(0),
+            weeklyStats: [],
+            recentTransactions: [],
+            isShiftOpen: false
+        });
+    }
+
+    const startTime = activeShift.startTime;
+    const endTime = endOfToday; // For aggregates up to now
+
+    // 1. Get Today Revenue (Active Shift)
     const todayTransactions = await prisma.transaction.aggregate({
       where: {
         hotelId: hotelId,
         createdAt: {
-          gte: startOfToday,
-          lte: endOfToday
+          gte: startTime,
+          lte: endTime
         }
       },
       _sum: {
@@ -36,6 +65,10 @@ export async function GET(req: NextRequest) {
     const todayRevenue = todayTransactions._sum.amount || 0;
 
     // 2. Get Yesterday Revenue for growth
+    const yesterday = subDays(today, 1);
+    const startOfYesterday = startOfDay(yesterday);
+    const endOfYesterday = endOfDay(yesterday);
+
     const yesterdayTransactions = await prisma.transaction.aggregate({
       where: {
         hotelId: hotelId,
@@ -74,13 +107,13 @@ export async function GET(req: NextRequest) {
     // 4. Get Pending Bills (orders ready but not completed)
     const pendingBillsCount = activeOrders.filter(o => o.status === 'READY').length;
 
-    // 5. Completion Rate (today)
+    // 5. Completion Rate (Current Shift)
     const totalTodayOrders = await prisma.order.count({
         where: {
             hotelId,
             createdAt: {
-                gte: startOfToday,
-                lte: endOfToday
+                gte: startTime,
+                lte: endTime
             }
         }
     });
@@ -90,8 +123,8 @@ export async function GET(req: NextRequest) {
             hotelId,
             status: 'COMPLETED',
             createdAt: {
-                gte: startOfToday,
-                lte: endOfToday
+                gte: startTime,
+                lte: endTime
             }
         }
     });
@@ -100,13 +133,13 @@ export async function GET(req: NextRequest) {
         ? Math.round((completedTodayOrders / totalTodayOrders) * 100) 
         : 100;
 
-    // 6. Revenue Breakdown by Payment Method (Today)
+    // 6. Revenue Breakdown by Payment Method (Current Shift)
     const transactionsToday = await prisma.transaction.findMany({
         where: {
             hotelId,
             createdAt: {
-                gte: startOfToday,
-                lte: endOfToday
+                gte: startTime,
+                lte: endTime
             }
         }
     });
@@ -118,26 +151,41 @@ export async function GET(req: NextRequest) {
     };
     
     let totalGst = 0;
+    // We'll keep hourly stats for the last 24 hours regardless of shift to show momentum
     const hourlyBreakdown = Array(24).fill(0);
+    const momentumStart = subDays(today, 1);
+
+    const momentumTransactions = await prisma.transaction.findMany({
+        where: {
+            hotelId,
+            createdAt: {
+                gte: momentumStart,
+                lte: endTime
+            }
+        }
+    });
+
+    momentumTransactions.forEach((tx: any) => {
+        const hour = new Date(tx.createdAt).getHours();
+        hourlyBreakdown[hour] += tx.amount;
+    });
 
     transactionsToday.forEach((tx: any) => {
         if (tx.paymentMethod && tx.paymentMethod in breakdown) {
             breakdown[tx.paymentMethod as keyof typeof breakdown] += tx.amount || 0;
         }
         totalGst += tx.gstAmount || 0;
-        const hour = new Date(tx.createdAt).getHours();
-        hourlyBreakdown[hour] += tx.amount;
     });
 
-    // 7. Top 5 Selling Items Today
+    // 7. Top 5 Selling Items Today (Current Shift)
     const topOrderItems = await prisma.orderItem.groupBy({
         by: ['itemId'],
         where: {
             order: {
                 hotelId,
                 createdAt: {
-                    gte: startOfToday,
-                    lte: endOfToday
+                    gte: startTime,
+                    lte: endTime
                 }
             }
         },
@@ -183,13 +231,13 @@ export async function GET(req: NextRequest) {
         };
     })).then(stats => stats.reverse());
 
-    // 9. Get Recent Transactions (today)
+    // 9. Get Recent Transactions (Current Shift)
     const recentTransactions = await prisma.transaction.findMany({
         where: {
             hotelId: hotelId,
             createdAt: {
-                gte: startOfToday,
-                lte: endOfToday
+                gte: startTime,
+                lte: endTime
             }
         },
         orderBy: {
@@ -217,9 +265,10 @@ export async function GET(req: NextRequest) {
         topItems: topItems,
         hourlyStats: hourlyBreakdown,
         weeklyStats: weeklyStats,
-        recentTransactions: recentTransactions
+        recentTransactions: recentTransactions,
+        isShiftOpen: true,
+        shiftStartTime: startTime
     });
-
   } catch (error: any) {
     console.error('Revenue API Error:', error);
     return NextResponse.json({ error: 'Failed to fetch revenue' }, { status: 500 });
