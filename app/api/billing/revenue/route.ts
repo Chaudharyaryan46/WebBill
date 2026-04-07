@@ -101,17 +101,13 @@ export async function GET(req: NextRequest) {
         : 100;
 
     // 6. Revenue Breakdown by Payment Method (Today)
-    const paymentBreakdown = await prisma.transaction.groupBy({
-        by: ['paymentMethod'],
+    const transactionsToday = await prisma.transaction.findMany({
         where: {
             hotelId,
             createdAt: {
                 gte: startOfToday,
                 lte: endOfToday
             }
-        },
-        _sum: {
-            amount: true
         }
     });
 
@@ -120,14 +116,74 @@ export async function GET(req: NextRequest) {
         UPI: 0,
         Card: 0
     };
+    
+    let totalGst = 0;
+    const hourlyBreakdown = Array(24).fill(0);
 
-    paymentBreakdown.forEach((item: any) => {
-        if (item.paymentMethod && item.paymentMethod in breakdown) {
-            breakdown[item.paymentMethod as keyof typeof breakdown] = item._sum.amount || 0;
+    transactionsToday.forEach((tx: any) => {
+        if (tx.paymentMethod && tx.paymentMethod in breakdown) {
+            breakdown[tx.paymentMethod as keyof typeof breakdown] += tx.amount || 0;
         }
+        totalGst += tx.gstAmount || 0;
+        const hour = new Date(tx.createdAt).getHours();
+        hourlyBreakdown[hour] += tx.amount;
     });
 
-    // 7. Get Recent Transactions (today)
+    // 7. Top 5 Selling Items Today
+    const topOrderItems = await prisma.orderItem.groupBy({
+        by: ['itemId'],
+        where: {
+            order: {
+                hotelId,
+                createdAt: {
+                    gte: startOfToday,
+                    lte: endOfToday
+                }
+            }
+        },
+        _sum: {
+            quantity: true
+        },
+        orderBy: {
+            _sum: {
+                quantity: 'desc'
+            }
+        },
+        take: 5
+    });
+
+    const topItems = await Promise.all(topOrderItems.map(async (oi) => {
+        const item = await prisma.menuItem.findUnique({
+            where: { id: oi.itemId },
+            select: { name: true }
+        });
+        return {
+            name: item?.name || 'Unknown',
+            quantity: oi._sum.quantity || 0
+        };
+    }));
+
+    // 8. Weekly History (last 7 days)
+    const weeklyStats = await Promise.all(Array.from({ length: 7 }).map(async (_, i) => {
+        const date = subDays(today, i);
+        const start = startOfDay(date);
+        const end = endOfDay(date);
+        
+        const dayRevenue = await prisma.transaction.aggregate({
+            where: {
+                hotelId,
+                createdAt: { gte: start, lte: end }
+            },
+            _sum: { amount: true }
+        });
+
+        return {
+            date: date.toISOString().split('T')[0],
+            revenue: dayRevenue._sum.amount || 0
+        };
+    })).then(stats => stats.reverse());
+
+    // 9. Get Recent Transactions (today)
     const recentTransactions = await prisma.transaction.findMany({
         where: {
             hotelId: hotelId,
@@ -157,6 +213,10 @@ export async function GET(req: NextRequest) {
         pendingBills: pendingBillsCount,
         completionRate: completionRate,
         breakdown: breakdown,
+        totalGst: totalGst,
+        topItems: topItems,
+        hourlyStats: hourlyBreakdown,
+        weeklyStats: weeklyStats,
         recentTransactions: recentTransactions
     });
 

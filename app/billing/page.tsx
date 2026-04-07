@@ -7,7 +7,9 @@ import {
   Search, Users, Printer,
   CheckCircle2, DollarSign, ArrowRight,
   TrendingUp, Table as TableIcon,
-  Phone, User as UserIcon, Tag
+  Phone, User as UserIcon, Tag,
+  X, ChevronRight, BarChart3, PieChart,
+  ShieldCheck, AlertTriangle, Calendar, Info
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -29,8 +31,14 @@ export default function BillingDashboard() {
       UPI: 0,
       Card: 0
     },
+    totalGst: 0,
+    topItems: [] as { name: string, quantity: number }[],
+    hourlyStats: Array(24).fill(0),
+    weeklyStats: [] as { date: string, revenue: number }[],
     recentTransactions: []
   });
+  const [showInsights, setShowInsights] = useState(false);
+  const [activeTab, setActiveTab] = useState<'performance' | 'menu' | 'tax' | 'closure'>('performance');
 
   const fetchStats = async () => {
     try {
@@ -257,7 +265,10 @@ export default function BillingDashboard() {
               <p className="text-webbill-muted text-[10px] font-bold uppercase tracking-widest text-webbill-burgundy/80">by WebCultivation</p>
             </div>
           </div>
-          <div className="w-12 h-12 rounded-full border-2 border-webbill-burgundy overflow-hidden bg-white flex items-center justify-center shadow-lg">
+          <div 
+            onClick={() => setShowInsights(true)}
+            className="w-12 h-12 rounded-full border-2 border-webbill-burgundy overflow-hidden bg-white flex items-center justify-center shadow-lg cursor-pointer active:scale-90 transition-all hover:bg-webbill-burgundy/5"
+          >
              <TrendingUp size={20} className="text-webbill-burgundy" />
           </div>
         </div>
@@ -581,6 +592,428 @@ export default function BillingDashboard() {
                     <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                   </button>
               </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+      
+      {/* Business Insights Modal */}
+      <AnimatePresence>
+        {showInsights && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowInsights(false)}
+              className="fixed inset-0 bg-webbill-dark/60 backdrop-blur-md z-[60]"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-10 z-[70] bg-white rounded-[40px] shadow-2xl overflow-hidden flex flex-col md:flex-row"
+            >
+               {/* Modal Sidebar */}
+               <div className="w-full md:w-80 bg-webbill-cream/50 border-r border-gray-100 p-8 flex flex-col">
+                  <div className="flex items-center gap-4 mb-12">
+                     <div className="w-12 h-12 rounded-2xl bg-webbill-burgundy flex items-center justify-center text-white shadow-lg">
+                        <TrendingUp size={24} />
+                     </div>
+                     <div>
+                        <h2 className="text-xl font-black">Insights</h2>
+                        <p className="text-[10px] font-black uppercase text-webbill-muted tracking-widest">Business Intelligence</p>
+                     </div>
+                  </div>
+
+                  <div className="flex-1 space-y-2">
+                     {[
+                        { id: 'performance', label: 'Performance', icon: BarChart3 },
+                        { id: 'menu', label: 'Top Items', icon: PieChart },
+                        { id: 'tax', label: 'Tax Summary', icon: ShieldCheck },
+                        { id: 'closure', label: 'Shift Closure', icon: Calendar },
+                     ].map((tab) => (
+                        <button
+                           key={tab.id}
+                           onClick={() => setActiveTab(tab.id as any)}
+                           className={`w-full flex items-center gap-4 p-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${
+                              activeTab === tab.id 
+                              ? 'bg-webbill-burgundy text-white shadow-xl shadow-webbill-burgundy/20' 
+                              : 'text-webbill-muted hover:bg-white hover:text-webbill-dark'
+                           }`}
+                        >
+                           <tab.icon size={18} />
+                           {tab.label}
+                        </button>
+                     ))}
+                  </div>
+
+                  <button 
+                    onClick={() => setShowInsights(false)}
+                    className="mt-auto flex items-center gap-3 p-4 text-webbill-muted hover:text-red-500 font-black text-xs uppercase tracking-widest transition-all"
+                  >
+                    <X size={18} /> Close Panel
+                  </button>
+               </div>
+
+               {/* Modal Content */}
+               <div className="flex-1 p-10 overflow-y-auto no-scrollbar bg-white">
+                  {activeTab === 'performance' && (
+                     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-12">
+                        <section>
+                           <div className="flex justify-between items-end mb-8">
+                              <div>
+                                 <h3 className="text-2xl font-black flex items-center gap-3">
+                                    <BarChart3 className="text-webbill-burgundy" /> Revenue Velocity
+                                 </h3>
+                                 <p className="text-[10px] font-black uppercase text-webbill-muted tracking-widest mt-1">Hourly Sales Performance (24h)</p>
+                              </div>
+                              <div className="flex items-center gap-2 bg-webbill-burgundy/5 px-4 py-2 rounded-xl">
+                                 <div className="w-2 h-2 rounded-full bg-webbill-burgundy animate-pulse" />
+                                 <span className="text-[10px] font-black uppercase tracking-widest text-webbill-burgundy">Live Momentum</span>
+                              </div>
+                           </div>
+
+                           <div className="h-72 bg-white rounded-[40px] border border-gray-100 shadow-2xl shadow-webbill-burgundy/5 p-4 relative overflow-hidden group/chart">
+                              {/* Background Grid */}
+                              <div className="absolute inset-x-12 inset-y-12 flex flex-col justify-between pointer-events-none">
+                                 {[0, 1, 2, 3].map((i) => (
+                                    <div key={i} className="w-full h-px bg-gray-50 border-t border-dashed border-gray-200" />
+                                 ))}
+                              </div>
+
+                              <div className="absolute inset-x-12 inset-y-12">
+                                 <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                    <defs>
+                                       <linearGradient id="chart-fill" x1="0%" y1="0%" x2="0%" y2="100%">
+                                          <stop offset="0%" stopColor="#2A73B6" stopOpacity="0.15" />
+                                          <stop offset="100%" stopColor="#2A73B6" stopOpacity="0.01" />
+                                       </linearGradient>
+                                       <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                                          <feGaussianBlur stdDeviation="1.5" result="blur" />
+                                          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                                       </filter>
+                                    </defs>
+
+                                    {/* Area Path */}
+                                    <motion.path 
+                                       initial={{ pathLength: 0, opacity: 0 }}
+                                       animate={{ pathLength: 1, opacity: 1 }}
+                                       transition={{ duration: 1.5, ease: "easeInOut" }}
+                                       d={(() => {
+                                          const max = Math.max(...stats.hourlyStats, 10);
+                                          const points = stats.hourlyStats.map((val: number, h: number) => ({
+                                             x: (h / 23) * 100,
+                                             y: 100 - (val / max) * 85 - 5
+                                          }));
+                                          
+                                          const path = points.reduce((acc, point, i, a) => {
+                                             if (i === 0) return `M ${point.x},${point.y}`;
+                                             const prev = a[i - 1];
+                                             const cp1x = (prev.x + point.x) / 2;
+                                             return `${acc} C ${cp1x},${prev.y} ${cp1x},${point.y} ${point.x},${point.y}`;
+                                          }, "");
+                                          return `${path} L 100 110 L 0 110 Z`;
+                                       })()}
+                                       fill="url(#chart-fill)"
+                                    />
+
+                                    {/* Smooth Line Path */}
+                                    <motion.path 
+                                       initial={{ pathLength: 0 }}
+                                       animate={{ pathLength: 1 }}
+                                       transition={{ duration: 2, ease: "easeInOut" }}
+                                       d={(() => {
+                                          const max = Math.max(...stats.hourlyStats, 10);
+                                          const points = stats.hourlyStats.map((val: number, h: number) => ({
+                                             x: (h / 23) * 100,
+                                             y: 100 - (val / max) * 85 - 5
+                                          }));
+                                          
+                                          return points.reduce((acc, point, i, a) => {
+                                             if (i === 0) return `M ${point.x},${point.y}`;
+                                             const prev = a[i - 1];
+                                             const cp1x = (prev.x + point.x) / 2;
+                                             return `${acc} C ${cp1x},${prev.y} ${cp1x},${point.y} ${point.x},${point.y}`;
+                                          }, "");
+                                       })()}
+                                       fill="none"
+                                       stroke="#2A73B6"
+                                       strokeWidth="3"
+                                       strokeLinecap="round"
+                                       filter="url(#glow)"
+                                    />
+                                 </svg>
+                              </div>
+
+                              {/* Interactive Overlay & Markers */}
+                              <div className="absolute inset-x-12 inset-y-12 flex justify-between">
+                                 {stats.hourlyStats.map((val: number, h: number) => {
+                                    const max = Math.max(...stats.hourlyStats, 10);
+                                    const y = (val / max) * 85 + 5;
+                                    const isPeak = val > 0 && val === Math.max(...stats.hourlyStats);
+                                    
+                                    // 12-hour format converter
+                                    const hour12 = h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`;
+
+                                    return (
+                                       <div key={h} className="group flex-1 relative flex justify-center cursor-pointer">
+                                          {/* Seeker Line */}
+                                          <div className="absolute inset-y-0 w-px bg-webbill-burgundy/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                          
+                                          {/* Pulse Dot */}
+                                          <div 
+                                             style={{ bottom: `calc(${y}% - 6px)` }}
+                                             className="absolute w-3 h-3 bg-white border-2 border-webbill-burgundy rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all scale-50 group-hover:scale-100 z-10"
+                                          >
+                                             <div className="absolute inset-0 bg-webbill-burgundy rounded-full animate-ping opacity-20" />
+                                          </div>
+
+                                          {/* Bottom Time Label (Visible on Hover or for even hours only to avoid clutter) */}
+                                          {h % 3 === 0 && (
+                                             <div className="absolute -bottom-8 opacity-40 group-hover:opacity-100 transition-all">
+                                                <p className="text-[7px] font-black text-webbill-muted whitespace-nowrap">{hour12}</p>
+                                             </div>
+                                          )}
+
+                                          {/* Tooltip */}
+                                          <div className="absolute bottom-full mb-6 bg-webbill-dark text-white rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 pointer-events-none z-20">
+                                             <div className="px-4 py-2 border-b border-white/10 text-center">
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Hourly Sales</p>
+                                                <p className="text-sm font-black text-white">₹{val.toLocaleString()}</p>
+                                             </div>
+                                             <div className="px-4 py-1.5 flex items-center justify-center gap-2 bg-white/5">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-webbill-burgundy" />
+                                                <span className="text-[8px] font-black uppercase tracking-widest">{hour12}</span>
+                                             </div>
+                                          </div>
+
+                                          {/* Peak Badge */}
+                                          {isPeak && (
+                                             <div 
+                                                style={{ bottom: `calc(${y}% + 12px)` }}
+                                                className="absolute bg-webbill-burgundy text-white text-[7px] font-black px-1.5 py-0.5 rounded-full shadow-lg z-10 uppercase tracking-tighter"
+                                             >
+                                                Peak
+                                             </div>
+                                          )}
+                                       </div>
+                                    );
+                                 })}
+                              </div>
+                           </div>
+                           <div className="mt-8 flex justify-center gap-12">
+                              <div className="flex items-center gap-2">
+                                 <div className="w-3 h-3 rounded-full bg-webbill-burgundy/20 border border-webbill-burgundy flex items-center justify-center">
+                                    <div className="w-1 h-1 rounded-full bg-webbill-burgundy" />
+                                 </div>
+                                 <span className="text-[9px] font-black uppercase tracking-widest text-webbill-muted">Projected Revenue</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                 <div className="w-8 h-1 rounded-full bg-webbill-burgundy/10 border-t border-dashed border-webbill-burgundy/40" />
+                                 <span className="text-[9px] font-black uppercase tracking-widest text-webbill-muted">Average Baseline</span>
+                              </div>
+                           </div>
+                        </section>
+
+                        <section>
+                           <h3 className="text-2xl font-black mb-8 flex items-center gap-3">
+                              <Calendar className="text-webbill-burgundy" /> Weekly Trajectory
+                           </h3>
+                           <div className="bg-webbill-cream/50 p-8 rounded-[40px] border border-gray-100">
+                              <div className="h-24 flex items-end gap-3 mb-6">
+                                 {stats.weeklyStats.map((day: any, i: number) => {
+                                    const max = Math.max(...stats.weeklyStats.map((s:any) => s.revenue), 1);
+                                    const height = (day.revenue / max) * 100;
+                                    return (
+                                       <div key={i} className="flex-1 flex flex-col items-center">
+                                          <div className="w-full flex-1 flex flex-col justify-end">
+                                             <motion.div 
+                                                initial={{ height: 0 }}
+                                                animate={{ height: `${height}%` }}
+                                                className={`w-full rounded-t-xl ${i === 6 ? 'bg-webbill-burgundy shadow-lg shadow-webbill-burgundy/20' : 'bg-webbill-muted/20'}`}
+                                             />
+                                          </div>
+                                          <p className="text-[10px] font-black text-webbill-muted uppercase mt-3">{new Date(day.date).toLocaleDateString([], { weekday: 'short' })}</p>
+                                          <p className="text-[10px] font-black text-webbill-dark mt-1">₹{day.revenue > 1000 ? (day.revenue/1000).toFixed(1) + 'k' : day.revenue}</p>
+                                       </div>
+                                    );
+                                 })}
+                              </div>
+                              <div className="bg-white p-6 rounded-3xl flex justify-between items-center shadow-sm">
+                                 <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center">
+                                       <TrendingUp size={20} />
+                                    </div>
+                                    <div>
+                                       <p className="text-[10px] font-black text-webbill-muted uppercase tracking-widest">Projection</p>
+                                       <p className="text-sm font-black text-webbill-dark">On track for 12% Monthly Growth</p>
+                                    </div>
+                                 </div>
+                                 <button className="text-webbill-burgundy text-[10px] font-black uppercase tracking-widest hover:underline">Full Audit</button>
+                              </div>
+                           </div>
+                        </section>
+                     </motion.div>
+                  )}
+
+                  {activeTab === 'menu' && (
+                     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+                        <h3 className="text-2xl font-black mb-8 flex items-center gap-3">
+                           <PieChart className="text-webbill-burgundy" /> Top Selling Items
+                        </h3>
+                        <div className="space-y-4">
+                           {stats.topItems.length === 0 ? (
+                              <div className="p-12 text-center bg-webbill-cream rounded-3xl border border-dashed border-webbill-muted/30">
+                                 <p className="text-webbill-muted font-bold">No items sold yet today.</p>
+                              </div>
+                           ) : (
+                              stats.topItems.map((item: any, idx: number) => (
+                                 <div key={idx} className="premium-card p-6 flex items-center justify-between">
+                                    <div className="flex items-center gap-6">
+                                       <div className="w-14 h-14 bg-webbill-burgundy text-white rounded-2xl flex items-center justify-center font-black text-xl shadow-lg">
+                                          #{idx + 1}
+                                       </div>
+                                       <div>
+                                          <h4 className="text-lg font-black text-webbill-dark">{item.name}</h4>
+                                          <p className="text-[10px] font-black text-webbill-muted uppercase tracking-widest">Performance Score: High</p>
+                                       </div>
+                                    </div>
+                                    <div className="text-right">
+                                       <span className="text-2xl font-black text-webbill-burgundy">{item.quantity}</span>
+                                       <p className="text-[10px] font-black text-webbill-muted uppercase tracking-widest">Units Sold</p>
+                                    </div>
+                                 </div>
+                              ))
+                           )}
+                        </div>
+                     </motion.div>
+                  )}
+
+                  {activeTab === 'tax' && (
+                     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+                        <h3 className="text-2xl font-black mb-8 flex items-center gap-3">
+                           <ShieldCheck className="text-webbill-success" /> Live Tax Summary (GST)
+                        </h3>
+                        <div className="grid grid-cols-2 gap-8 mb-12">
+                           <div className="bg-webbill-cream p-8 rounded-[40px] border border-webbill-success/10 text-center">
+                              <p className="text-[10px] font-black text-webbill-muted uppercase tracking-widest mb-4">Total CGST (2.5%)</p>
+                              <p className="text-4xl font-black text-webbill-dark">₹{(stats.totalGst / 2).toLocaleString()}</p>
+                           </div>
+                           <div className="bg-webbill-cream p-8 rounded-[40px] border border-webbill-success/10 text-center">
+                              <p className="text-[10px] font-black text-webbill-muted uppercase tracking-widest mb-4">Total SGST (2.5%)</p>
+                              <p className="text-4xl font-black text-webbill-dark">₹{(stats.totalGst / 2).toLocaleString()}</p>
+                           </div>
+                        </div>
+                        <div className="bg-webbill-success/5 p-8 rounded-[40px] border-2 border-webbill-success/20 flex justify-between items-center">
+                           <div>
+                              <p className="text-xs font-black text-webbill-success uppercase tracking-widest mb-1">Combined GST Liability</p>
+                              <p className="text-lg font-black text-webbill-dark">Daily Total Collection</p>
+                           </div>
+                           <p className="text-5xl font-black text-webbill-success">₹{stats.totalGst.toLocaleString()}</p>
+                        </div>
+                        <div className="mt-8 p-6 bg-gray-50 rounded-2xl border border-gray-100 flex gap-4 items-center">
+                           <Info className="text-webbill-muted" size={20} />
+                           <p className="text-[10px] font-bold text-webbill-muted leading-relaxed">
+                              Values are calculated based on a 5.0% flat GST rate (2.5% CGST + 2.5% SGST) applied to all settled items today.
+                           </p>
+                        </div>
+                     </motion.div>
+                  )}
+
+                  {activeTab === 'closure' && (
+                     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col h-full">
+                        <div className="flex justify-between items-start mb-10">
+                           <div>
+                              <h3 className="text-3xl font-black mb-2 flex items-center gap-3">
+                                 <Calendar className="text-red-500" /> End-of-Day Closure
+                              </h3>
+                              <p className="text-webbill-muted font-medium">Review and finalize today's business session.</p>
+                           </div>
+                           <div className="bg-red-50 text-red-600 px-4 py-2 rounded-xl border border-red-100 text-[10px] font-black uppercase tracking-widest animate-pulse">
+                              Pending Closure
+                           </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-6 mb-10">
+                           <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                              <p className="text-[10px] font-black text-webbill-muted uppercase tracking-widest mb-2">Net Cash</p>
+                              <p className="text-2xl font-black text-webbill-dark">₹{stats.breakdown.Cash.toLocaleString()}</p>
+                           </div>
+                           <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                              <p className="text-[10px] font-black text-webbill-muted uppercase tracking-widest mb-2">Digital (UPI/Card)</p>
+                              <p className="text-2xl font-black text-webbill-dark">₹{(stats.breakdown.UPI + stats.breakdown.Card).toLocaleString()}</p>
+                           </div>
+                           <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                              <p className="text-[10px] font-black text-webbill-muted uppercase tracking-widest mb-2">Total Sales</p>
+                              <p className="text-2xl font-black text-webbill-burgundy">₹{stats.todayRevenue.toLocaleString()}</p>
+                           </div>
+                        </div>
+
+                        <div className="bg-webbill-cream p-10 rounded-[40px] border-2 border-dashed border-webbill-muted/20 flex flex-col items-center text-center space-y-6">
+                           <div className="w-20 h-20 bg-red-500 text-white rounded-full flex items-center justify-center shadow-xl shadow-red-500/20">
+                              <AlertTriangle size={40} />
+                           </div>
+                           <div>
+                              <h4 className="text-xl font-black">Ready to close the shop?</h4>
+                              <p className="text-sm text-webbill-muted max-w-md mx-auto mt-2">
+                                 Closing the shift will summarize all transactions and generate a final PDF report for the owner. This action is irreversible for the current session.
+                              </p>
+                           </div>
+                           <div className="flex gap-4 w-full max-w-md">
+                              <button 
+                                 onClick={() => {
+                                    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+                                    doc.setFont('helvetica', 'bold');
+                                    doc.setFontSize(22);
+                                    doc.text('SHIFT CLOSURE REPORT', 105, 20, { align: 'center' });
+                                    
+                                    doc.setFontSize(10);
+                                    doc.setFont('helvetica', 'normal');
+                                    doc.text(`Hotel: Saffron Bay (SFB-99)`, 20, 35);
+                                    doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 40);
+                                    doc.text(`Closure Time: ${new Date().toLocaleTimeString()}`, 20, 45);
+
+                                    autoTable(doc, {
+                                       startY: 55,
+                                       head: [['Revenue Item', 'Amount (INR)']],
+                                       body: [
+                                          ['Total Revenue', stats.todayRevenue.toFixed(2)],
+                                          ['Cash In Hand', stats.breakdown.Cash.toFixed(2)],
+                                          ['UPI Payments', stats.breakdown.UPI.toFixed(2)],
+                                          ['Card Payments', stats.breakdown.Card.toFixed(2)],
+                                          ['Total GST Collected', stats.totalGst.toFixed(2)],
+                                          ['Growth vs Yesterday', `${stats.growth}%`]
+                                       ],
+                                       theme: 'striped',
+                                       headStyles: { fillColor: [92, 45, 39], textColor: [255, 255, 255] }
+                                    });
+
+                                    const finalY = (doc as any).lastAutoTable.finalY + 10;
+                                    doc.setFont('helvetica', 'bold');
+                                    doc.text('Top Items Sold:', 20, finalY);
+                                    
+                                    stats.topItems.forEach((item: any, i: number) => {
+                                       doc.setFont('helvetica', 'normal');
+                                       doc.text(`${i+1}. ${item.name} (x${item.quantity})`, 25, finalY + 7 + (i * 5));
+                                    });
+
+                                    doc.save(`EOD_Report_${Date.now()}.pdf`);
+
+                                    // Create WhatsApp Message
+                                    const message = `*🧾 WebBill EOD Shift Closure Summary*\n\n*Hotel:* Saffron Bay\n*Date:* ${new Date().toLocaleDateString()}\n\n*Financials:*\n💰 Total Sales: ₹${stats.todayRevenue.toLocaleString()}\n💵 Cash: ₹${stats.breakdown.Cash.toLocaleString()}\n💳 Digital: ₹${(stats.breakdown.UPI + stats.breakdown.Card).toLocaleString()}\n⚖️ Tax Collected: ₹${stats.totalGst.toLocaleString()}\n📈 Daily Growth: ${stats.growth}%\n\n*Top Items:* \n${stats.topItems.map(i => `▪️ ${i.name} (x${i.quantity})`).join('\n')}\n\nShift closed successfully! ✅`;
+                                    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+                                    setShowInsights(false);
+                                 }}
+                                 className="flex-1 bg-red-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-red-600/20 active:scale-95 transition-all flex items-center justify-center gap-3"
+                              >
+                                 <ShieldCheck size={20} /> Close Shop
+                              </button>
+                           </div>
+                        </div>
+                     </motion.div>
+                  )}
+               </div>
             </motion.div>
           </>
         )}
