@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// SQLite doesn't support enums natively. We'll use Strings for roles and statuses.
+// Valid values: SUPER_ADMIN, ADMIN, WAITER, KITCHEN, COUNTER
+// Valid values: PENDING, PREPARING, READY, COMPLETED, CANCELLED
+// Valid values: UNPAID, PAID, PARTIAL
+
+model Hotel {
+  id                String   @id @default(cuid())
+  name              String
+  slug              String   @unique
+  address           String?
+  phone             String?
+  subscriptionExpiry DateTime
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  users             User[]
+  categories        MenuCategory[]
+  items             MenuItem[]
+  tables            Table[]
+  orders            Order[]
+  transactions      Transaction[]
+  customers         Customer[]
+  loyaltyTransactions LoyaltyTransaction[]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("WAITER")
+  hotelId   String?  // Null only for SuperAdmin
+  hotel     Hotel?   @relation(fields: [hotelId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Table {
+  id       String @id @default(cuid())
+  number   String
+  capacity Int
+  hotelId  String
+  hotel    Hotel  @relation(fields: [hotelId], references: [id])
+  orders   Order[]
+}
+
+model MenuCategory {
+  id      String @id @default(cuid())
+  name    String
+  pointsMultiplier Float @default(1.0)
+  hotelId String
+  hotel   Hotel  @relation(fields: [hotelId], references: [id])
+  items   MenuItem[]
+}
+
+model MenuItem {
+  id          String   @id @default(cuid())
+  name        String
+  price       Float
+  description String?
+  image       String?
+  isAvailable Boolean  @default(true)
+  categoryId  String
+  category    MenuCategory @relation(fields: [categoryId], references: [id])
+  hotelId     String
+  hotel       Hotel        @relation(fields: [hotelId], references: [id])
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  status      String @default("PENDING")
+  totalAmount Float
+  hotelId     String
+  hotel       Hotel       @relation(fields: [hotelId], references: [id])
+  tableId     String
+  table       Table       @relation(fields: [tableId], references: [id])
+  items       OrderItem[]
+  transaction Transaction?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  itemId    String
+  item      MenuItem @relation(fields: [itemId], references: [id])
+  quantity  Int
+  price     Float    // Snapshot of price at time of order
+  notes     String?
+}
+
+model Transaction {
+  id                    String        @id @default(cuid())
+  orderId               String        @unique
+  order                 Order         @relation(fields: [orderId], references: [id])
+  amount                Float
+  status                String        @default("UNPAID")
+  paymentMethod         String?       // Cash, Card, UPI
+  gstAmount             Float
+  discount              Float         @default(0)
+  loyaltyPointsRedeemed Float         @default(0)
+  loyaltyPointsEarned   Float         @default(0)
+  customerId            String?
+  customer              Customer?     @relation(fields: [customerId], references: [id])
+  hotelId               String
+  hotel                 Hotel         @relation(fields: [hotelId], references: [id])
+  createdAt             DateTime      @default(now())
+}
+
+model Customer {
+  id                String               @id @default(cuid())
+  phone             String
+  name              String?
+  pointsBalance     Float                @default(0)
+  totalPointsEarned Float                @default(0)
+  referralCode      String?              @unique
+  referredById      String?
+  referredBy        Customer?            @relation("Referral", fields: [referredById], references: [id])
+  referrals         Customer[]           @relation("Referral")
+  hotelId           String
+  hotel             Hotel                @relation(fields: [hotelId], references: [id])
+  transactions      Transaction[]
+  loyaltyTransactions LoyaltyTransaction[]
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  @@unique([phone, hotelId])
+}
+
+model LoyaltyTransaction {
+  id          String   @id @default(cuid())
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+  type        String   // EARN, BURN, REFERRAL
+  points      Float
+  rupeeValue  Float    // ₹ value at the time of transaction
+  orderId     String?  // Reference to the order if applicable
+  description String?
+  hotelId     String
+  hotel       Hotel    @relation(fields: [hotelId], references: [id])
+  createdAt   DateTime @default(now())
+}

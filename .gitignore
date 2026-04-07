@@ -1,8 +1,1 @@
-node_modules/
-*.db
-.gemini/
-.git/
-*.log
-.env
-.DS_Store
-deploy.zip
+node_modules

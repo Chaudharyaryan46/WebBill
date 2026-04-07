@@ -1,0 +1,13 @@
+{
+  "/page": "app/page.js",
+  "/waiter/page": "app/waiter/page.js",
+  "/api/tables/route": "app/api/tables/route.js",
+  "/kitchen/page": "app/kitchen/page.js",
+  "/api/orders/route": "app/api/orders/route.js",
+  "/billing/page": "app/billing/page.js",
+  "/api/billing/revenue/route": "app/api/billing/revenue/route.js",
+  "/api/menu/route": "app/api/menu/route.js",
+  "/api/orders/[id]/route": "app/api/orders/[id]/route.js",
+  "/api/billing/settle/route": "app/api/billing/settle/route.js",
+  "/receipt/[orderId]/page": "app/receipt/[orderId]/page.js"
+}

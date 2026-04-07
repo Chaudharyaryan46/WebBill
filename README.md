@@ -1,117 +1,94 @@
-# 🍽️ DineFlow: Next-Gen Restaurant Management System
+# DineFlow: Premium Restaurant SaaS (Multi-Tenant)
 
-[![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg)]()
-[![Tech: Node.js](https://img.shields.io/badge/Tech-Node.js-blue.svg)]()
-[![Database: SQL.js](https://img.shields.io/badge/Database-SQL.js-orange.svg)]()
-[![Interface: Real--Time](https://img.shields.io/badge/Interface-Real--Time-ff69b4.svg)]()
+DineFlow is a high-performance, multi-tenant Restaurant Management System (SaaS) designed with a **Zomato-level UI/UX**. It provides a seamless, mobile-first experience for Waiters, Kitchen Staff, and Billing Counters, ensuring real-time synchronization and high operational efficiency.
 
-**DineFlow** is a comprehensive, real-time restaurant management ecosystem designed to bridge the gap between customers, waiters, the kitchen, and the billing counter. Built for speed, reliability, and ease of use, DineFlow transforms traditional dining into a seamless digital experience.
+## 🚀 Key Features
 
----
+### 1. Multi-Tenant Architecture
+- **Strict Data Isolation**: Every record at the database level is scoped with a `hotelId`.
+- **Global Control**: SuperAdmin panel to onboard new hotels and manage subscriptions.
+- **Role-Based Access**: Specialized dashboards for Waiters, Kitchen, and Billing.
 
-## 🚀 Key Modules
+### 2. Waiter Dashboard (Mobile-First)
+- **Zomato-Inspired UI**: Large touch targets, intuitive navigation, and high-fidelity visuals.
+- **Instant Order Workflow**: Interactive `+/-` quantity selectors for immediate order adjustment.
+- **Floating Bottom Bar**: Real-time order summary (items & total) with a "View Order" quick-access button.
+- **Visual Table Management**: Color-coded table statuses (Available, Taken, Pending).
 
-### 📋 2. Waiter's Command Center (`/waiter`)
-A robust mobile-first module for staff to manage floor operations.
-- **Table Overview**: Real-time status of every table (Free, Occupied, Billed).
-- **Order Modification**: Waiters can add items to existing orders or create new ones.
-- **PIN Authentication**: Secure staff login to prevent unauthorized access.
-- **Live Notifications**: Get instant alerts when a kitchen item is ready or a customer requests a bill.
+### 3. Kitchen Dashboard
+- **Real-Time Sync**: Instant order notifications from waiters.
+- **Order Tracking**: Transitions from "Pending" to "Preparing" and "Ready" with a single tap.
+- **Horizontal Navigation**: Optimized tab system for switching between order statuses.
 
-### 🍳 3. Kitchen Display System (KDS) (`/kitchen`)
-Eliminate paper tickets with a high-visibility digital display for the culinary team.
-- **Real-Time KOT**: Orders appear instantly as they are placed by customers or waiters.
-- **Progress Tracking**: Update item status from *Pending* → *Preparing* → *Ready*.
-- **Grouped Views**: Items are grouped by Order ID and Table Number for efficient preparation.
+### 4. Billing & Analytics
+- **Live Bill Generation**: Instant calculation of totals, taxes, and service charges.
+- **Payment Verification**: Professional payment settlement workflow.
+- **Digital Receipts**: High-contrast, easy-to-read billing summaries.
 
-### 💰 4. Billing & Analytics Counter (`/counter`)
-The ultimate hub for settlement and business intelligence.
-- **Dynamic Billing**: Apply discounts, calculate taxes (GST), and generate final invoices.
-- **Multi-Mode Payment**: Tracking for Cash, UPI, and Card transactions.
-- **Table Management**: Reset tables to "Free" status once payment is confirmed.
-- **Sales Insights**: Detailed transaction history and daily revenue summaries.
+## 🛠️ Tech Stack
 
----
+- **Framework**: [Next.js 15 (App Router)](https://nextjs.org/)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Database**: [PostgreSQL](https://www.postgresql.org/) with [Prisma ORM](https://www.prisma.io/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/) with a Custom **DineFlow Premium Design System**
+- **State Management**: [Zustand](https://github.com/pmndrs/zustand)
+- **Animations**: [Framer Motion](https://www.framer.com/motion/)
 
-## 🛠️ Technology Stack
+## 🎨 Design System
 
-DineFlow is built on a modern, event-driven architecture:
-
-- **Backend**: [Node.js](https://nodejs.org/) & [Express](https://expressjs.com/) (Fast and scalable).
-- **Real-time Sync**: [Socket.io](https://socket.io/) (Instant updates across all devices).
-- **Database**: [SQL.js](https://sql.js.org/) (A lightweight, file-based SQLite implementation for zero-config portability).
-- **Frontend**: Premium Vanilla JS, HTML5, and CSS3 (No heavy frameworks, ensuring ultra-fast load times).
-- **Deployment**: Optimized for platforms like **Render** with persistent disk support.
-
----
-
-## ⚙️ Installation & Setup
-
-### 1. Prerequisites
-- [Node.js](https://nodejs.org/) (v14 or higher)
-- npm (Node Package Manager)
-
-### 2. Clone and Install
-```bash
-# Navigate to the project directory
-cd "Hotel Management"
-
-# Install dependencies
-npm install
-```
-
-### 3. Run Locally
-```bash
-# Start the development server
-npm run dev
-```
-The system will be live at `http://localhost:3000`.
-
-### 4. Access URLs
-- **Waiter Module**: `http://localhost:3000/waiter`
-- **Billing Counter**: `http://localhost:3000/counter`
-- **Kitchen Display**: `http://localhost:3000/kitchen`
-
----
+DineFlow uses a curated brown-cream palette inspired by luxury hospitality:
+- **Burgundy (`#5C2D27`)**: Primary brand color for headers, buttons, and status.
+- **Cream (`#FDF8F5`)**: Soft background for high readability.
+- **Tan (`#D4A373`)**: Accent color for highlights and progress.
+- **Dark (`#2D1B19`)**: High-contrast text for critical information.
 
 ## 📂 Project Structure
 
 ```text
-Hotel Management/
-├── db/                 # Database initialization & seed data
-├── public/             # Frontend assets (HTML, CSS, JS)
-│   ├── counter/        # Billing module
-│   ├── kitchen/        # Kitchen module
-│   └── waiter/         # Waiter module
-├── server.js           # Main Express server & Socket.io logic
-├── restaurant.db       # Persistent SQLite database file
-├── package.json        # Dependencies & scripts
-└── README_DEPLOY.md    # Cloud deployment instructions
+├── app/                  # Next.js App Router (Pages & Layouts)
+│   ├── waiter/           # Waiter Tablet/Mobile View
+│   ├── kitchen/          # Kitchen Display System
+│   ├── billing/          # Cashier/Billing Interface
+│   └── globals.css       # Core Design Tokens & Manual Fallbacks
+├── src/
+│   ├── services/         # API & Backend Business Logic
+│   ├── hooks/            # Custom React Hooks & Store (Zustand)
+│   ├── components/       # Reusable UI Components
+│   └── lib/              # Shared Utilities (Prisma Client, Sockets)
+├── prisma/               # Database Schema & Migrations
+└── public/               # Static Assets & Icons
 ```
 
+## ⚙️ Getting Started
+
+### 1. Prerequisites
+- Node.js 18+
+- PostgreSQL instance
+
+### 2. Install Dependencies
+```bash
+npm install
+```
+
+### 3. Environment Variables
+Create a `.env` file in the root:
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/dineflow"
+NEXT_PUBLIC_APP_URL="http://localhost:3004"
+```
+
+### 4. Database Setup
+```bash
+npx prisma generate
+npx prisma db push
+```
+
+### 5. Run Development Server
+```bash
+npm run dev
+```
+Navigate to `http://localhost:3004/waiter` to see the mobile dashboard.
+
 ---
 
-## 🛡️ Security & Reliability
-- **Multi-Tenant Ready**: Designed with logical isolation for future SaaS expansion.
-- **Auto-Save Database**: The system automatically commits changes to `restaurant.db` every 5 seconds.
-- **Role-Based Access**: PIN-protected modules for staff and administrative functions.
-
----
-
-## 🤝 Contributing
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git checkout -b feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 📜 License
-Distributed under the MIT License. See `LICENSE` for more information.
-
----
-
-*Built with ❤️ for the restaurant industry.*
+Created with ❤️ by the DineFlow Team.
